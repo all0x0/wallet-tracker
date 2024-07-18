@@ -9,6 +9,7 @@ let model = new Schema({
     tag: { type: String },
     chat_id: { type: String },
     is_active: { type: Boolean, default: true },
+    webhook_id: { type: String, default: '' },
     createdAt: { type: Number, default: Date.now }
 });
 

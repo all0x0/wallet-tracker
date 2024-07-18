@@ -7,9 +7,12 @@ const { customEditMessage, customSendMessage } = require("./customMessage");
 const targetWalletModel = require("../db/model/target_wallets");
 
 // Mongo DB action
-const { addWallet } = require('../db/action/target_wallet_action');
+const { addWallet, getExistWebhookData } = require('../db/action/target_wallet_action');
 
 const { BOT_STATE, GENERAL_ACTION } = require("../constant");
+
+// Helius Service
+const { addWebhook, createWebhook, editWebhook } = require('./service/heliusService');
 
 const bot = new TelegramBot(_config.BOT_SETTING.TOKEN)
 
@@ -162,12 +165,25 @@ var botProgram = {
             let newOne = {};
             newOne.public_key = splited_message[0];
             newOne.tag = recieved_message[i].replace(newOne.public_key, '').trim();
-            const result = await addWallet(message.chat.id, newOne);
-            await bot.sendMessage(message.chat.id, result, {
-                reply_markup: JSON.stringify({
-                    force_reply: false
-                })
-            });
+            let exist_data = await getExistWebhookData();
+            let result_register;
+            if (exist_data[0].length > 0) result_register = await addWebhook(newOne.public_key, ["SWAP"], exist_data[0], exist_data[1]);
+            else result_register = await addWebhook(newOne.public_key, ["SWAP"]);
+            if (result_register[0] == true) {
+                newOne.webhook_id = result_register[1];
+                const result = await addWallet(message.chat.id, newOne);
+                await bot.sendMessage(message.chat.id, result, {
+                    reply_markup: JSON.stringify({
+                        force_reply: false
+                    })
+                });
+            } else {
+                await bot.sendMessage(message.chat.id, result_register[1], {
+                    reply_markup: JSON.stringify({
+                        force_reply: false
+                    })
+                });
+            }
         }
         return;
     }

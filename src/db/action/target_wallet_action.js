@@ -1,7 +1,7 @@
 const web3 = require("@solana/web3.js");
 let targetWalletModel = require('../model/target_wallets');
 
-let addWallet = async (chat_id, newOne) => {
+const addWallet = async (chat_id, newOne) => {
     let is_exist = await targetWalletModel.find({ public_key: newOne.public_key });
     if (is_exist.length > 0) {
         return `Wallet ${newOne.public_key}\nThis wallet already exists.`;
@@ -12,11 +12,26 @@ let addWallet = async (chat_id, newOne) => {
         newWallet.index = max_index.length > 0 ? max_index[0].maxField + 1: 0;
         newWallet.tag = newOne.tag;
         newWallet.chat_id = chat_id;
+        newWallet.webhook_id = newOne.webhook_id;
         await newWallet.save();
-        return `Wallet ${newOne.public_key}\nAdded successfully! 🎉`;
+        return `Wallet <code>${newOne.public_key}</code>\nAdded successfully! 🎉\nThis change may take up to 2 minutes to take effect.`;
     }
 }
 
+const getExistWebhookData = async () => {
+    let last_field = (await targetWalletModel.find().limit(1).sort({createdAt: -1}));
+    if(last_field.length > 0) {
+        let wallet_list = [];
+        let filtered_list = await targetWalletModel.find({ webhook_id: last_field[0].webhook_id });
+        filtered_list.map(row => {
+            wallet_list.push(row.public_key);
+        });
+        return [last_field[0].webhook_id, wallet_list];
+    }
+    else return ['', []];
+} 
+
 module.exports = {
-    addWallet
+    addWallet,
+    getExistWebhookData
 }
