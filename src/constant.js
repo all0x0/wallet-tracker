@@ -19,6 +19,7 @@ module.exports = {
     },
     GENERAL_ACTION: {
         BACK: "back",
+        HELP: "help",
         DOWNLOAD_WALLET_LIST: "download_wallet_list"
     }
 }

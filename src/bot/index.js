@@ -125,6 +125,10 @@ var botProgram = {
                     await botProgram.deleteAllWallet(callback_data.message);
                     return;
                 
+                case GENERAL_ACTION.HELP:
+                    await botProgram.goToHelpPage(callback_data.message, false);
+                    return;
+                
                 default: 
                     return;
             }
@@ -140,7 +144,7 @@ var botProgram = {
         const text = "💹 SolanaHacker - Wallet Tracker \n\nThis bot helps you monitor transactions across your Solana wallets. After adding wallets, you'll receive immediate notifications for trade activities. \n\n";
         const inlineButtons = [
             [{ text: ' 💳 WALLET MANAGE', callback_data: BOT_STATE.WALLET_MANAGE }],
-            [{ text: ' ❓ HELP', callback_data: 'help' }]
+            [{ text: ' ❓ HELP', callback_data: GENERAL_ACTION.HELP }]
         ];
         botProgram.call_time++;
         if (from_start) await customSendMessage(bot, message, text, inlineButtons);
@@ -157,7 +161,7 @@ var botProgram = {
             text += `<a>/w_${wallet_list[i].index}</a> <code>${wallet_list[i].public_key}</code> (${wallet_list[i].tag})\n`;
             // text += `<span class="tg-spoiler">/w_${wallet_list[i].index}</span> <code>${wallet_list[i].public_key}</code> (${wallet_list[i].tag})\n`;
         }
-        text += `\nTip: Click on w_... to change wallet settings`;
+        text += `\nTip: Click on w_... to change wallet settings in clude add, delete, active, pause wallet address.`;
         let inlineButtons = [];
         inlineButtons.push([{ text: ' ✨ Add Wallet', callback_data: BOT_STATE.ADD_WALLET }, { text: '🚮 Delete Wallet', callback_data: BOT_STATE.DELETE_WALLET }]);
         inlineButtons.push([{ text: ' ©️ Copy Wallet addresses', callback_data: BOT_STATE.COPY_ADDRESS }]);
@@ -226,6 +230,22 @@ var botProgram = {
             else await customEditMessage(bot, message, text, inlineButtons);
         }
         
+        return;
+    },
+
+    goToHelpPage: async (message, from_start = true) => {
+        botProgram.chat_id = message.chat.id;
+        let text = ` 🎊 Welcome to SolanaHacker 🚀 - Wallet Tracker.\n\n`;
+        text += `This bot helps you monitor transactions across your Solana wallets 🎯 . \nAfter adding wallets, you'll receive immediate notifications for trade activities. 🛬 \n`
+        text += `This bot use Helius webhook and you will recieve immediate notification from Helius webhook. ✨ \n\n`;
+        text += `💻 What command you can use in this bot:\n/start - start the bot\n/add - add wallet address to receive real time notification for trade activities\n/delete - delete registerted wallet address to do not receive notification\n\n`;
+        text += `This bot is updated time by time. ♻️\n If you have any opinion in using this bot, kindly leave comment to @admin. 💬 \n\n`;
+        text += `Kindly use this bot to grab flying money 💸 .`;
+        const inlineButtons = [
+            [{ text: ' 🔙 Back to FirstPage', callback_data: BOT_STATE.WELCOME }]
+        ];
+        if (from_start) await customSendMessage(bot, message, text, inlineButtons);
+        else await customEditMessage(bot, message, text, inlineButtons);
         return;
     },
 
@@ -369,7 +389,14 @@ var botProgram = {
             }
         };
 
-        if (wallet_cnt > 0) await bot.sendMessage(message.chat.id, `Poof! ${wallet_cnt} wallets have vanished into thin air! Now, what other adventures await? ✨`, {
+        if (wallet_cnt > 0) 
+        await bot.sendMessage(message.chat.id, `Poof! ${wallet_cnt} wallets have vanished into thin air! Now, what other adventures await? ✨`, {
+            reply_markup: JSON.stringify({
+                force_reply: false
+            })
+        });
+        else 
+        await bot.sendMessage(message.chat.id, `Oh, 😕 you haven't got any registered wallet yet.`, {
             reply_markup: JSON.stringify({
                 force_reply: false
             })
