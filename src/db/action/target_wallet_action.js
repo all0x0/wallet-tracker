@@ -2,9 +2,9 @@ const web3 = require("@solana/web3.js");
 let targetWalletModel = require('../model/target_wallets');
 
 const addWallet = async (chat_id, newOne) => {
-    let is_exist = await targetWalletModel.find({ public_key: newOne.public_key });
+    let is_exist = await targetWalletModel.find({ public_key: newOne.public_key, chat_id: chat_id });
     if (is_exist.length > 0) {
-        return `Wallet ${newOne.public_key}\nThis wallet already exists.`;
+        return `Wallet <code>${newOne.public_key}</code>\nThis wallet already exists.`;
     } else {
         let max_index = await targetWalletModel.aggregate([{ $group: { _id: null, maxField: { $max: "$index" }} }]);
         let newWallet = new targetWalletModel();
@@ -29,9 +29,20 @@ const getExistWebhookData = async () => {
         return [last_field[0].webhook_id, wallet_list];
     }
     else return ['', []];
-} 
+}
+
+const deleteWallet = async (chat_id, public_key) => {
+    try {
+        await targetWalletModel.deleteOne({ chat_id: chat_id, public_key: public_key });
+        return '';
+    } catch (e) {
+        console.log(e);
+        return String(e);
+    }
+}
 
 module.exports = {
     addWallet,
-    getExistWebhookData
+    getExistWebhookData,
+    deleteWallet
 }

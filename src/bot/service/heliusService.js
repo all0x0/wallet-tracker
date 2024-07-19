@@ -56,6 +56,17 @@ exports.editWebhook = async (webhook_id, wallet_addresses, transaction_types = [
     }
 }
 
+exports.removeWebhook = async (wallet_address, webhook_id) => {
+    let webhook_data = await this.getWebhook(webhook_id);
+    if (webhook_data[0] == true) {
+        let wallet_addresses = webhook_data[1].accountAddresses.filter(address => address != wallet_address);
+        if (wallet_addresses.length > 0) return await this.editWebhook(webhook_id, wallet_addresses);
+        else return await this.deleteWebhook(webhook_id);
+    } else {
+        return [false, webhook_data[1]];
+    }
+}
+
 exports.deleteWebhook = async (webhook_id) => {
     try {
         const delete_url = `https://api.helius.xyz/v0/webhooks/${webhook_id}?api-key=${global._config.HELIUS_API_KEY}`;
