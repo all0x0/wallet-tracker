@@ -12,9 +12,11 @@ const { addWallet, getExistWebhookData, deleteWallet } = require('../db/action/t
 const { BOT_STATE, GENERAL_ACTION } = require("../constant");
 
 // Helius Service
-const { addWebhook, createWebhook, editWebhook, deleteWebhook, removeWebhook } = require('./service/heliusService');
+const { addWebhook, createWebhook, editWebhook, deleteWebhook, removeWebhook, getTopholders } = require('./service/heliusService');
 
-const bot = new TelegramBot(_config.BOT_SETTING.TOKEN)
+const bot = new TelegramBot(_config.BOT_SETTING.TOKEN);
+
+const MAX_MESSAGE_LENGTH = 4096;
 
 var botProgram = {
     bot: bot,
@@ -29,7 +31,10 @@ var botProgram = {
 
         // Set custom commands
         const commands = [
-            { command: 'start', description: 'Start the bot' }
+            { command: 'start', description: 'Start the bot' },
+            { command: 'add', description: 'Add wallet addresses' },
+            { command: 'delete', description: 'Delete wallet addresses' },
+            { command: 'holders', description: 'Fetch top token holders' },
         ];
       
         // Set custom commands when the bot starts up
@@ -57,6 +62,15 @@ var botProgram = {
                 // }
                 await botProgram.goToFirstPage(message, true);
                 return;
+            } else if (text === "/add") {
+                await botProgram.goToAddWalletPage(message, true);
+                return;
+            } else if (text === "/delete") {
+                await botProgram.goToDeletePage(message, true);
+                return;
+            } else if (text === "/holders") {
+                await botProgram.goToFetchTokenHolders(message, true);
+                return;
             }
 
             // when the user is first in this bot
@@ -76,6 +90,10 @@ var botProgram = {
                     
                     case BOT_STATE.DELETE_WALLET:
                         botProgram.deleteWallet(message);
+                        return;
+
+                    case BOT_STATE.FETCH_TOKEN_HOLDERS:
+                        botProgram.fetchTokenHolders(message);
                         return;
                     
                     default:
@@ -129,6 +147,10 @@ var botProgram = {
                     await botProgram.goToHelpPage(callback_data.message, false);
                     return;
                 
+                case BOT_STATE.FETCH_TOKEN_HOLDERS:
+                    await botProgram.goToFetchTokenHolders(callback_data.message, false);
+                    return;
+                
                 default: 
                     return;
             }
@@ -144,6 +166,7 @@ var botProgram = {
         const text = "💹 SolanaHacker - Wallet Tracker \n\nThis bot helps you monitor transactions across your Solana wallets. After adding wallets, you'll receive immediate notifications for trade activities. \n\n";
         const inlineButtons = [
             [{ text: ' 💳 WALLET MANAGE', callback_data: BOT_STATE.WALLET_MANAGE }],
+            [{ text: ' 📊 FETCH TOKEN HOLDERS', callback_data: BOT_STATE.FETCH_TOKEN_HOLDERS }],
             [{ text: ' ❓ HELP', callback_data: GENERAL_ACTION.HELP }]
         ];
         botProgram.call_time++;
@@ -214,7 +237,7 @@ var botProgram = {
         botProgram.bot_state = BOT_STATE.DELETE_ALL_WALLET;
         let text = ' ';
         const same_user_rows = await targetWalletModel.find({ chat_id: message.chat.id });
-        if (same_user_rows.length == 0) await bot.sendMessage(message.chat.id, `Oh 🙃, You haven't got any wallet. 0 wallet is in registered.`, {
+        if (same_user_rows.length == 0) await bot.sendMessage(message.chat.id, `Oh 🙃, You haven't got any wallet. 0 wallet is registered.`, {
             reply_markup: JSON.stringify({
                 force_reply: false
             })
@@ -244,6 +267,23 @@ var botProgram = {
         const inlineButtons = [
             [{ text: ' 🔙 Back to FirstPage', callback_data: BOT_STATE.WELCOME }]
         ];
+        if (from_start) await customSendMessage(bot, message, text, inlineButtons);
+        else await customEditMessage(bot, message, text, inlineButtons);
+        return;
+    },
+
+    goToFetchTokenHolders: async (message, from_start = true) => {
+        botProgram.chat_id = message.chat.id;
+        botProgram.bot_state = BOT_STATE.FETCH_TOKEN_HOLDERS;
+        let text = '';
+        text += 'Great! You can get special token holders by one command at once.🚀\n\n';
+        text += 'Simply send me each token address and percent on a new line. For example:\n\n'
+        text += 'token_mint_address percent\n\n';
+        text += 'Tip: If the token is very tradable and motible, it will gets more time. thanks for your patience and understanding.';
+        const inlineButtons = [
+            [{ text: ' 🔙 Back to FirstPage', callback_data: BOT_STATE.WELCOME }]
+        ];
+        botProgram.call_time++;
         if (from_start) await customSendMessage(bot, message, text, inlineButtons);
         else await customEditMessage(bot, message, text, inlineButtons);
         return;
@@ -403,7 +443,68 @@ var botProgram = {
         });
 
         return;
+    },
+
+    fetchTokenHolders: async (message) => {
+        const splited_message = message.text.split(' ');
+        const token_address = splited_message[0];
+        const percent = splited_message[1];
+        const holder_list_result = await getTopholders(token_address, percent);
+        if (holder_list_result[0] == true) {
+            const token_detail = holder_list_result[1].token_detail;
+            const holder_list = holder_list_result[1].holder_list;
+            holder_list.sort((a, b) => b.amount - a.amount);
+            let chunks = [];
+            let text = ` 🪩 Token detail\n Mint: <code>${token_address}</code>\n Total supply: ${formatNumber(token_detail.uiAmount)}\n Decimals: ${token_detail.decimals}\n\n`;
+            text += ` 🥷 Top holders (Amount >= ${percent}%)\n`;
+            for (i in holder_list) {
+                const holder = holder_list[i];
+                let item = `<code>${holder.owner}</code> ${formatNumber(holder.amount)} (${holder.percent.toFixed(2)}%)\n`;
+                if ((text + item).length > MAX_MESSAGE_LENGTH) {
+                    chunks.push(text);
+                    text = item;
+                } else {
+                    text += item;
+                }
+            }
+            if (text.length > 0) chunks.push(text);
+            // if (text.length < MAX_MESSAGE_LENGTH) {
+            //     await bot.sendMessage(message.chat.id, text, {
+            //         parse_mode: 'HTML',
+            //         reply_markup: JSON.stringify({
+            //             force_reply: false
+            //         })
+            //     });
+            // } else {
+            //     const chunks = text.match(new RegExp(`.{1,${MAX_MESSAGE_LENGTH}}`, 'g'));
+                for (const chunk of chunks) {
+                    await bot.sendMessage(message.chat.id, chunk, {
+                        parse_mode: 'HTML',
+                        reply_markup: JSON.stringify({
+                            force_reply: false
+                        })
+                    });
+                }
+            // }
+        } else {
+            await bot.sendMessage(message.chat.id, holder_list_result[1], {
+                reply_markup: JSON.stringify({
+                    force_reply: false
+                })
+            });
+        }
+        return;
     }
 }
+
+function formatNumber(n) {
+    if (n < 1000) {
+      return n.toString();
+    } else if (n < 1000000) {
+      return (n / 1000).toFixed(2).replace(/\.?0+$/, '') + 'K';
+    } else {
+      return (n / 1000000).toFixed(2).replace(/\.?0+$/, '') + 'M';
+    }
+  }
 
 module.exports = botProgram;

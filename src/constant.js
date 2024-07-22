@@ -8,6 +8,7 @@ module.exports = {
         DELETE_WALLET: "delete_wallet",
         DELETE_ALL_WALLET: "delete_all_wallet",
         DELETE_ALL_WALLET_YES: "delete_all_wallet_yes",
+        FETCH_TOKEN_HOLDERS: "fetch_token_holders",
         COPY_ADDRESS: "copy_wallet_address",
         CREATE_WALLET :"create_wallet",
         IMPORT_WALLET :"import_wallet",
