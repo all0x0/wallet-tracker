@@ -27,14 +27,14 @@ app.use(bodyParser.json());
 
 app.post(global._config.WEBHOOK_URI, async (req, res) => {
     try {
-        console.log('Received POST request with body');
+        console.log('Received POST request with body', new Date());
         if(Object.keys(req.body).length == 0) return res.json({});
         const response_data = req.body;
-        console.log(response_data[0])
-        console.log('\\\\\\\\\\\\\\'.repeat(10))
-        console.log(response_data[0].nativeTransfers)
-        console.log('////////////'.repeat(10))
-        console.log(response_data[0].tokenTransfers)
+        // console.log(response_data[0])
+        // console.log('\\\\\\\\\\\\\\'.repeat(10))
+        // console.log(response_data[0].nativeTransfers)
+        // console.log('////////////'.repeat(10))
+        // console.log(response_data[0].tokenTransfers)
         // console.log('-------'.repeat(10))
         // console.log(response_data[0].events.swap)
         // console.log('-------'.repeat(10))
@@ -123,7 +123,7 @@ app.post(global._config.WEBHOOK_URI, async (req, res) => {
 
         text += sub_description;
 
-        console.log(text);
+        // console.log(text);
 
         targetWalletList.map(targetWalletInfo => {
             text = text.replace(/{targetWalletInfoTag}/g, targetWalletInfo.tag);

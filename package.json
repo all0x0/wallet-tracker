@@ -2,7 +2,7 @@
   "name": "wallet-tracker",
   "version": "1.0.0",
   "description": "Solana Chain",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "start": "node app.js",
     "nodemon": "nodemon app.js"
