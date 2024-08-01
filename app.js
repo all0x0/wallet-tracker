@@ -8,9 +8,9 @@ let botProgram = require('./src/bot');
 const axios = require('axios');
 
 const web3 = require("@solana/web3.js");
-const connection = new web3.Connection(process.env.HTTP_RPC_URL, { wsEndpoint: process.env.WSS_RPC_URL, commitment: 'confirmed' });
+// const connection = new web3.Connection(process.env.HTTP_RPC_URL, { wsEndpoint: process.env.WSS_RPC_URL, commitment: 'confirmed' });
 
-const perf = require('execution-time')(console.log);
+// const perf = require('execution-time')(console.log);
 
 const targetWalletModel = require('./src/db/model/target_wallets');
 

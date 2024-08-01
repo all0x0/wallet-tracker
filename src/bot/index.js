@@ -63,12 +63,15 @@ var botProgram = {
                 await botProgram.goToFirstPage(message, true);
                 return;
             } else if (text === "/add") {
+                console.log(new Date(message.date * 1000), message.from.username, "started /add bot.");
                 await botProgram.goToAddWalletPage(message, true);
                 return;
             } else if (text === "/delete") {
+                console.log(new Date(message.date * 1000), message.from.username, "started /delete bot.");
                 await botProgram.goToDeletePage(message, true);
                 return;
             } else if (text === "/holders") {
+                console.log(new Date(message.date * 1000), message.from.username, "started /holders bot.");
                 await botProgram.goToFetchTokenHolders(message, true);
                 return;
             }
