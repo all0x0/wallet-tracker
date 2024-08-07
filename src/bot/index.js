@@ -295,31 +295,55 @@ var botProgram = {
     // Add wallet for track
     addWallet: async (message) => {
         const recieved_message = message.text.split('\n');
+        let wallet_list = [];
+        let tag_list = [];
         for (i in recieved_message) {
             const splited_message = recieved_message[i].split(' ');
-            let newOne = {};
-            newOne.public_key = splited_message[0];
-            newOne.tag = recieved_message[i].replace(newOne.public_key, '').trim();
-            let exist_data = await getExistWebhookData();
-            let result_register;
-            if (exist_data[0].length > 0) result_register = await addWebhook(newOne.public_key, ["SWAP"], exist_data[0], exist_data[1]);
-            else result_register = await addWebhook(newOne.public_key, ["SWAP"]);
-            if (result_register[0] == true) {
+            wallet_list.push(splited_message[0]);
+            tag_list.push(recieved_message[i].replace(splited_message[0], '').trim());
+            // let newOne = {};
+            // newOne.public_key = splited_message[0];
+            // newOne.tag = recieved_message[i].replace(newOne.public_key, '').trim();
+            // let exist_data = await getExistWebhookData();
+            // let result_register;
+            // if (exist_data[0].length > 0) result_register = await addWebhook(newOne.public_key, ["SWAP", "TRANSFER"], exist_data[0], exist_data[1]);
+            // else result_register = await addWebhook(newOne.public_key, ["SWAP", "TRANSFER"]);
+            // if (result_register[0] == true) {
+            //     newOne.webhook_id = result_register[1];
+            //     const result = await addWallet(message.chat.id, newOne);
+                // await bot.sendMessage(message.chat.id, result, {
+                //     parse_mode: 'HTML',
+                //     reply_markup: JSON.stringify({
+                //         force_reply: false
+                //     })
+                // });
+            // } else {
+                // await bot.sendMessage(message.chat.id, result_register[1], {
+                //     reply_markup: JSON.stringify({
+                //         force_reply: false
+                //     })
+                // });
+            // }
+        }
+        let exist_data = await getExistWebhookData();
+        let result_register;
+        if (exist_data[0].length > 0) result_register = await addWebhook(wallet_list, ["SWAP", "TRANSFER"], exist_data[0], exist_data[1]);
+        else result_register = await addWebhook(wallet_list, ["SWAP", "TRANSFER"]);
+        if (result_register[0] == true) {
+            for (i in wallet_list) {
+                let newOne = {};
+                newOne.public_key = wallet_list[i];
+                newOne.tag = tag_list[i];
                 newOne.webhook_id = result_register[1];
-                const result = await addWallet(message.chat.id, newOne);
-                await bot.sendMessage(message.chat.id, result, {
-                    parse_mode: 'HTML',
-                    reply_markup: JSON.stringify({
-                        force_reply: false
-                    })
-                });
-            } else {
-                await bot.sendMessage(message.chat.id, result_register[1], {
-                    reply_markup: JSON.stringify({
-                        force_reply: false
-                    })
-                });
+                await addWallet(message.chat.id, newOne);
             }
+            await bot.sendMessage(message.chat.id, `${wallet_list.length} wallet(s) Added successfully! 🎉\nThis change may take up to 2 minutes to take effect.`)
+        } else {
+            await bot.sendMessage(message.chat.id, result_register[1], {
+                reply_markup: JSON.stringify({
+                    force_reply: false
+                })
+            });
         }
         return;
     },
