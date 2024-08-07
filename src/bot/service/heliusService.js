@@ -4,22 +4,22 @@ const connection = new web3.Connection(process.env.HTTP_RPC_URL, { wsEndpoint: p
 
 const webhook_url = `http://${global._config.WEBHOOK_SERVER}:${global._config.PORT}${global._config.WEBHOOK_URI}`;
 
-exports.addWebhook = async (wallet_address, transaction_types = ["SWAP"], webhook_id = '', previous_wallet_addresses = []) => {
+exports.addWebhook = async (wallet_addresses, transaction_types = ["SWAP"], webhook_id = '', previous_wallet_addresses = []) => {
     if(webhook_id.length > 0) {
-        previous_wallet_addresses.push(wallet_address);
-        return await this.editWebhook(webhook_id, previous_wallet_addresses, transaction_types);
+        let new_wallet_addresses = [...previous_wallet_addresses, ...wallet_addresses];
+        return await this.editWebhook(webhook_id, new_wallet_addresses, transaction_types);
     } else {
-        return await this.createWebhook(wallet_address, transaction_types);
+        return await this.createWebhook(wallet_addresses, transaction_types);
     }
     return;
 }
 
-exports.createWebhook = async (wallet_address, transaction_types = ["SWAP"]) => {
+exports.createWebhook = async (wallet_addresses, transaction_types = ["SWAP"]) => {
     try {
         const data = {};
         data.webhookURL = webhook_url;
         data.transactionTypes = transaction_types;
-        data.accountAddresses = [wallet_address];
+        data.accountAddresses = wallet_addresses;
         data.webhookType = 'enhanced';
         data.txnStatus = 'success';
         const create_url = `https://api.helius.xyz/v0/webhooks?api-key=${global._config.HELIUS_API_KEY}`;
